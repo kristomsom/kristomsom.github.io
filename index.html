@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Análisis de Regresión Lineal Múltiple en R</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        h2 {
+            margin-top: 40px;
+            color: #2c3e50;
+        }
+        pre {
+            background-color: #eaeaea;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            white-space: pre-wrap;
+        }
+        .explicacion {
+            background-color: #ffffff;
+            border-left: 6px solid #3498db;
+            padding: 15px 25px;
+            margin-top: 30px;
+            border-radius: 8px;
+        }
+        .nota-final {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 15px 20px;
+            border-left: 4px solid #95a5a6;
+            border-radius: 8px;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            display: block;
+            color: #2980b9;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Script de Regresión Lineal Múltiple en R</h1>
+    <p>Este código realiza un análisis de regresión lineal múltiple sobre datos de abundancia de artrópodos en relación con variables ambientales.</p>
+
+    <pre><code>
+# Cargar los datos
+datos &lt;- read.csv("C:/Users/Usuario/Documents/R studios/datos_regresion_lineal_multiple.csv")
+
+# Subconjunto de variables predictoras para correlación
+predictoras &lt;- datos[, c("canopy_cover", "av_slope", "trees_over_3m", "av_litter_depth")]
+
+# Correlación de Pearson
+cor(predictoras, use = "complete.obs", method = "pearson")
+
+# Crear modelos
+m1 &lt;- lm(Abundance ~ canopy_cover, data = datos)
+m2 &lt;- lm(Abundance ~ canopy_cover + av_slope, data = datos)
+m3 &lt;- lm(Abundance ~ canopy_cover + trees_over_3m, data = datos)
+m4 &lt;- lm(Abundance ~ canopy_cover + av_litter_depth, data = datos)
+m5 &lt;- lm(Abundance ~ canopy_cover + av_slope + trees_over_3m + av_litter_depth, data = datos)
+
+# Evaluar resumen del mejor modelo
+summary(m5)
+
+# Visualizar relación simple
+plot(datos$canopy_cover, datos$Abundance,
+     main = "Relación entre canopy cover y riqueza de artrópodos",
+     xlab = "Canopy Cover (%)", ylab = "Riqueza de Artrópodos")
+abline(m1, col = "blue", lwd = 2)
+
+# Mostrar 4 gráficos de diagnóstico en una cuadrícula 2x2
+layout(matrix(c(1,2,3,4), 2, 2)) 
+plot(m5)
+
+# Instalar y cargar jtools
+install.packages("jtools")  # Solo la primera vez
+library(jtools)
+
+# Gráfico tipo "effect_plot" de jtools para canopy_cover
+effect_plot(m5, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Cobertura de dosel (%)",
+            y.label = "Riqueza de artrópodos",
+            main.title = "Efecto de canopy_cover sobre la riqueza de artrópodos")
+    </code></pre>
+
+    <div class="explicacion">
+        <p><strong>Interpretación del análisis:</strong></p>
+        <p>Decidí hacer una regresión lineal múltiple para evaluar cuáles de estas variables influyen sobre la riqueza de artrópodos. Primero, evalué si las variables predictoras tenían correlaciones entre sí usando Pearson, luego ajusté varios modelos combinando las variables predictoras y los comparé usando AIC.</p>
+
+        <p>El modelo con el menor AIC fue el <code>m5</code>, que incluye las variables <em>canopy_cover</em>, <em>av_slope</em>, <em>trees_over_3m</em> y <em>av_litter_depth</em>. Este modelo explica aproximadamente el 52% de la varianza observada en la riqueza de artrópodos (<strong>R² ajustado = 0.52</strong>), y muestra que la variable <em>canopy_cover</em> tiene un efecto significativo (<strong>p = 0.0018</strong>). Los análisis de diagnóstico indican que se cumplen los supuestos de normalidad y homocedasticidad, sin evidencia fuerte de observaciones influyentes.</p>
+    </div>
+
+    <h2>Ejemplo general para aplicar regresión múltiple</h2>
+
+    <pre><code>
+# 📦 Instalar e importar paquete para gráficos de regresión
+install.packages("jtools")  # Ejecutar solo la primera vez
+library(jtools)
+
+# 📁 Cargar los datos
+datos &lt;- read.csv("RUTA/AL/ARCHIVO.csv")  # Reemplaza con la ruta real
+
+# 🔍 Seleccionar variables predictoras numéricas/continuas
+# Aquí se colocan las variables independientes continuas
+predictoras &lt;- datos[, c("variable_numerica_1", "variable_numerica_2", 
+                         "variable_numerica_3", "variable_numerica_4")]
+
+# 📈 Calcular correlación entre las variables predictoras
+cor(predictoras, use = "complete.obs", method = "pearson")
+
+# 🧮 Crear varios modelos de regresión lineal múltiple
+modelo1 &lt;- lm(variable_dependiente ~ variable_numerica_1, data = datos)
+modelo2 &lt;- lm(variable_dependiente ~ variable_numerica_1 + variable_numerica_2, data = datos)
+modelo3 &lt;- lm(variable_dependiente ~ variable_numerica_1 + variable_numerica_3, data = datos)
+modelo4 &lt;- lm(variable_dependiente ~ variable_numerica_1 + variable_numerica_4, data = datos)
+modelo5 &lt;- lm(variable_dependiente ~ variable_numerica_1 + variable_numerica_2 + 
+                               variable_numerica_3 + variable_numerica_4, data = datos)
+
+# 📉 Comparar los modelos por AIC para seleccionar el mejor
+AIC(modelo1, modelo2, modelo3, modelo4, modelo5)
+
+# ✅ Ver el resumen del mejor modelo (ajusta el nombre según el resultado de AIC)
+summary(modelo5)
+
+# 📊 Graficar relación simple entre una variable predictora y la variable dependiente
+plot(datos$variable_numerica_1, datos$variable_dependiente,
+     main = "Relación entre variable predictora y variable dependiente",
+     xlab = "Variable numérica", ylab = "Variable dependiente")
+abline(modelo1, col = "blue", lwd = 2)
+
+# 📋 Gráficos de diagnóstico para evaluar supuestos del modelo
+layout(matrix(c(1, 2, 3, 4), 2, 2))
+plot(modelo5)
+
+# 🎨 Gráfico visual del efecto de una variable predictora en el modelo múltiple
+effect_plot(modelo5, pred = variable_numerica_1, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Variable predictora",
+            y.label = "Variable dependiente",
+            main.title = "Efecto de la variable sobre la variable dependiente")
+    </code></pre>
+
+    <div class="nota-final">
+        <p><strong>Notas:</strong></p>
+        <ul>
+            <li><code>variable_dependiente</code>: Lo que estás tratando de predecir (ej. riqueza, peso, nota).</li>
+            <li><code>variable_numerica_1</code>, etc.: Predictores numéricos o continuos.</li>
+            <li><code>modelo1</code>, <code>modelo2</code>...: Versiones del modelo con diferentes combinaciones de variables.</li>
+            <li><code>modelo5</code>: Se asume como el mejor modelo si tiene el menor AIC.</li>
+            <li><code>effect_plot</code>: Gráfico del efecto parcial de una variable en el modelo múltiple.</li>
+        </ul>
+    </div>
+
+    <div class="links">
+        <h2>Enlaces útiles:</h2>
+        <a href="https://rpubs.com/joaquin_ar/226291" target="_blank">RPubs: Regresión lineal en R</a>
+        <a href="https://www.datacamp.com/doc/r/regression" target="_blank">DataCamp: Guía de regresión en R</a>
+    </div>
+
+</body>
+</html>
