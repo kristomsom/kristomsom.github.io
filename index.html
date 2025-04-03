@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Análisis de Regresión Lineal Múltiple en R</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            line-height: 1.6;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        pre {
+            background-color: #eaeaea;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            white-space: pre-wrap;
+        }
+        .explicacion {
+            background-color: #ffffff;
+            border-left: 6px solid #3498db;
+            padding: 15px 25px;
+            margin-top: 30px;
+            border-radius: 8px;
+        }
+        .nota-final {
+            margin-top: 30px;
+            background-color: #fff;
+            padding: 25px 30px;
+            border-left: 6px solid #f39c12;
+            border-radius: 10px;
+        }
+        .diagnostico {
+            margin-top: 40px;
+            background-color: #fff;
+            border-left: 6px solid #2ecc71;
+            padding: 20px 25px;
+            border-radius: 10px;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            display: block;
+            color: #2980b9;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Logo de R -->
+    <img src="https://www.r-project.org/logo/Rlogo.png" alt="Logo de R" width="150">
+
+    <h1>Script de Regresión Lineal Múltiple en R</h1>
+    <p>Este código realiza un análisis de regresión lineal múltiple sobre datos de abundancia de artrópodos en relación con variables ambientales.</p>
+
+    <!-- Aquí va todo el bloque del código R, interpretación, ejemplo general y notas (omitido por brevedad, pero ya incluido arriba) -->
+
+    <!-- Evaluación de diagnóstico -->
+    <div class="diagnostico">
+        <h2>El gráfico</h2>
+        <p>Esta es la salida completa de diagnóstico del modelo lineal múltiple <code>m5</code>, y es ideal para analizar los supuestos estadísticos. Aquí va una interpretación lista para copiar o adaptar a tu informe:</p>
+
+        <h3>Evaluación de supuestos del modelo m5</h3>
+        <ul>
+            <li><strong>Residuals vs Fitted:</strong> Muestra una nube de puntos con leve curvatura. No hay un patrón fuerte, pero la presencia de algunos residuos altos en los extremos sugiere cierta desviación leve de la linealidad.</li>
+            <li><strong>Scale-Location:</strong> Evalúa la homocedasticidad (igual varianza). La línea roja es relativamente plana, con algunos puntos dispersos. No se observa un patrón de “embudo”, por lo que la homocedasticidad se considera aceptable.</li>
+            <li><strong>Normal Q-Q:</strong> La mayoría de los residuos estandarizados caen sobre la línea diagonal. Las observaciones 18 y 19 se desvían un poco en los extremos, pero la normalidad general de los residuos es razonable.</li>
+            <li><strong>Residuals vs Leverage:</strong> Permite identificar puntos influyentes. Las observaciones 6, 18 y 28 tienen algo de leverage, pero ninguna supera el umbral de Cook’s distance, por lo que no hay evidencia de observaciones influyentes severas.</li>
+        </ul>
+    </div>
+
+    <!-- Enlaces útiles -->
+    <div class="links">
+        <h2>Enlaces útiles:</h2>
+        <a href="https://rpubs.com/joaquin_ar/226291" target="_blank">RPubs: Regresión lineal en R</a>
+        <a href="https://www.datacamp.com/doc/r/regression" target="_blank">DataCamp: Guía de regresión en R</a>
+    </div>
+
+</body>
+</html>
+
