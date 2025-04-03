@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Análisis de Regresión Lineal Múltiple en R</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            line-height: 1.6;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        pre {
+            background-color: #eaeaea;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            white-space: pre-wrap;
+        }
+        .explicacion, .nota-final, .diagnostico {
+            background-color: #fff;
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        .explicacion {
+            border-left: 6px solid #3498db;
+        }
+        .nota-final {
+            border-left: 6px solid #f39c12;
+        }
+        .diagnostico {
+            border-left: 6px solid #2ecc71;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            display: block;
+            color: #2980b9;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="https://www.r-project.org/logo/Rlogo.png" alt="Logo de R" width="150">
+    <h1>Script de Regresión Lineal Múltiple en R</h1>
+    <p>Este código realiza un análisis de regresión lineal múltiple sobre datos de abundancia de artrópodos en relación con variables ambientales.</p>
+
+    <pre><code>
+# Cargar los datos
+datos <- read.csv("C:/Users/Usuario/Documents/R studios/datos_regresion_lineal_multiple.csv")
+predictoras <- datos[, c("canopy_cover", "av_slope", "trees_over_3m", "av_litter_depth")]
+cor(predictoras, use = "complete.obs", method = "pearson")
+m1 <- lm(Abundance ~ canopy_cover, data = datos)
+m2 <- lm(Abundance ~ canopy_cover + av_slope, data = datos)
+m3 <- lm(Abundance ~ canopy_cover + trees_over_3m, data = datos)
+m4 <- lm(Abundance ~ canopy_cover + av_litter_depth, data = datos)
+m5 <- lm(Abundance ~ canopy_cover + av_slope + trees_over_3m + av_litter_depth, data = datos)
+summary(m5)
+plot(datos$canopy_cover, datos$Abundance,
+     main = "Relación entre canopy cover y riqueza de artrópodos",
+     xlab = "Canopy Cover (%)", ylab = "Riqueza de Artrópodos")
+abline(m1, col = "blue", lwd = 2)
+layout(matrix(c(1,2,3,4), 2, 2)) 
+plot(m5)
+install.packages("jtools")
+library(jtools)
+effect_plot(m5, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Cobertura de dosel (%)",
+            y.label = "Riqueza de artrópodos",
+            main.title = "Efecto de canopy_cover sobre la riqueza de artrópodos")
+    </code></pre>
+
+    <div class="explicacion">
+        <strong>Interpretación del análisis:</strong>
+        <p>Decidí hacer una regresión lineal múltiple para evaluar cuáles de estas variables influyen sobre la riqueza de artrópodos. Primero, evalué si las variables predictoras tenían correlaciones entre sí usando Pearson, luego ajusté varios modelos combinando las variables predictoras y los comparé usando AIC.</p>
+        <p>El modelo con el menor AIC fue el <code>m5</code>, que incluye las variables <em>canopy_cover</em>, <em>av_slope</em>, <em>trees_over_3m</em> y <em>av_litter_depth</em>. Este modelo explica aproximadamente el 52% de la varianza observada en la riqueza de artrópodos (<strong>R² ajustado = 0.52</strong>), y muestra que la variable <em>canopy_cover</em> tiene un efecto significativo (<strong>p = 0.0018</strong>).</p>
+    </div>
+
+    <div class="nota-final">
+        <strong>Notas:</strong>
+        <ul>
+            <li><strong>🔁 El mejor modelo puede cambiar</strong>: Dependerá de los datos y del contexto ecológico.</li>
+            <li><strong>📉 El R² ajustado puede variar</strong>: Puede ser más bajo o más alto según las variables usadas.</li>
+            <li><strong>⭐ Las variables significativas cambian</strong>: Pueden cambiar según la muestra y colinealidad.</li>
+            <li><strong>⚠️ Se pueden violar supuestos</strong>: Revisar normalidad, homocedasticidad y outliers.</li>
+            <li><strong>💡 Comportamiento no lineal</strong>: Considerar términos cuadráticos si es necesario.</li>
+        </ul>
+    </div>
+
+    <div class="diagnostico">
+        <h2>El gráfico</h2>
+        <p>Esta es la salida completa de diagnóstico del modelo lineal múltiple <code>m5</code>, y es ideal para analizar los supuestos estadísticos.</p>
+        <h3>Evaluación de supuestos del modelo m5</h3>
+        <ul>
+            <li><strong>Residuals vs Fitted:</strong> Leve curvatura, sin patrón fuerte.</li>
+            <li><strong>Scale-Location:</strong> No hay patrón de embudo, homocedasticidad aceptable.</li>
+            <li><strong>Normal Q-Q:</strong> La mayoría de residuos siguen la línea diagonal, normalidad razonable.</li>
+            <li><strong>Residuals vs Leverage:</strong> Algunos puntos con leverage, pero sin evidencia de observaciones influyentes severas.</li>
+        </ul>
+    </div>
+
+    <div class="links">
+        <h2>Enlaces útiles:</h2>
+        <a href="https://rpubs.com/joaquin_ar/226291" target="_blank">RPubs: Regresión lineal en R</a>
+        <a href="https://www.datacamp.com/doc/r/regression" target="_blank">DataCamp: Guía de regresión en R</a>
+    </div>
+
+    <h2>Análisis final adicional: Modelo biomasa (modelo4)</h2>
+    <pre><code>
+# Cargar los datos
+datos <- read.csv("C:/Users/Usuario/Documents/R studios/table1.csv")
+str(datos)
+predictoras <- datos[, c("canopy_cover", "temperature", "humidity")]
+cor(predictoras, use = "complete.obs", method = "pearson")
+m1 <- lm(biomasa ~ canopy_cover, data = datos)
+m2 <- lm(biomasa ~ canopy_cover + temperature, data = datos)
+m3 <- lm(biomasa ~ canopy_cover + humidity, data = datos)
+m4 <- lm(biomasa ~ canopy_cover + temperature + humidity, data = datos)
+AIC(m1, m2, m3, m4)
+summary(m4)
+plot(datos$canopy_cover, datos$biomasa,
+     main = "Relación entre cobertura de dosel y biomasa",
+     xlab = "Cobertura de dosel (%)", ylab = "Biomasa (g)")
+abline(m1, col = "blue", lwd = 2)
+layout(matrix(c(1,2,3,4), 2, 2))
+plot(m4)
+install.packages("jtools")
+library(jtools)
+effect_plot(m4, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Cobertura de dosel",
+            y.label = "Biomasa",
+            main.title = "Efecto de canopy_cover sobre la biomasa")
+effect_plot(m4, pred = temperature, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Temperatura",
+            y.label = "Biomasa",
+            main.title = "Efecto de temperature sobre la biomasa")
+effect_plot(m4, pred = humidity, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Humedad",
+            y.label = "Biomasa",
+            main.title = "Efecto de humidity sobre la biomasa")
+    </code></pre>
+
+    <h2>Repetición final del modelo biomasa (modelo4)</h2>
+    <pre><code>
+# Cargar los datos
+datos <- read.csv("C:/Users/Usuario/Documents/R studios/table1.csv")
+str(datos)
+cor(datos[, c("canopy_cover", "temperature", "humidity")], use = "complete.obs", method = "pearson")
+modelo1 <- lm(biomasa ~ canopy_cover, data = datos)
+modelo2 <- lm(biomasa ~ canopy_cover + temperature, data = datos)
+modelo3 <- lm(biomasa ~ canopy_cover + humidity, data = datos)
+modelo4 <- lm(biomasa ~ canopy_cover + temperature + humidity, data = datos)
+AIC(modelo1, modelo2, modelo3, modelo4)
+summary(modelo4)
+plot(datos$canopy_cover, datos$biomasa,
+     main = "Relación entre canopy_cover y biomasa",
+     xlab = "Cobertura de dosel (%)", ylab = "Biomasa (g)")
+abline(modelo1, col = "blue", lwd = 2)
+layout(matrix(c(1,2,3,4), 2, 2))
+plot(modelo4)
+install.packages("jtools")
+library(jtools)
+effect_plot(modelo4, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Canopy Cover (%)",
+            y.label = "Biomasa",
+            main.title = "Efecto de canopy_cover sobre la biomasa")
+effect_plot(modelo4, pred = temperature, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Temperatura",
+            y.label = "Biomasa",
+            main.title = "Efecto de temperature sobre la biomasa")
+effect_plot(modelo4, pred = humidity, interval = TRUE, plot.points = TRUE,
+            jitter = 0.05, x.label = "Humedad",
+            y.label = "Biomasa",
+            main.title = "Efecto de humidity sobre la biomasa")
+    </code></pre>
+
+</body>
+</html>
