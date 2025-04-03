@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Análisis de Regresión Lineal Múltiple en R</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        pre {
+            background-color: #eaeaea;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Script de Regresión Lineal Múltiple en R</h1>
+    <p>Este código realiza un análisis de regresión lineal múltiple sobre datos de abundancia de artrópodos en relación con variables ambientales.</p>
+
+    <pre><code>
+# Cargar los datos
+datos &lt;- read.csv("C:/Users/Usuario/Documents/R studios/datos_regresion_lineal_multiple.csv")
+
+# Verificar correlaciones entre variables predictoras
+predictoras &lt;- datos[, c("canopy_cover", "av_slope", "trees_over_3m", "av_litter_depth")]
+cor(predictoras, use = "complete.obs", method = "pearson")
+
+# Crear modelos
+m1 &lt;- lm(Abundance ~ canopy_cover, data = datos)
+m2 &lt;- lm(Abundance ~ canopy_cover + av_slope, data = datos)
+m3 &lt;- lm(Abundance ~ canopy_cover + trees_over_3m, data = datos)
+m4 &lt;- lm(Abundance ~ canopy_cover + av_litter_depth, data = datos)
+m5 &lt;- lm(Abundance ~ canopy_cover + av_slope + trees_over_3m + av_litter_depth, data = datos)
+
+# Comparar modelos con AIC
+AIC(m1, m2, m3, m4, m5)
+
+# Ver resumen del modelo con menor AIC (ajusta según el resultado)
+summary(m5)  # Aquí cambia si otro modelo tiene menor AIC
+
+# Graficar relación entre canopy_cover y Abundance
+plot(datos$canopy_cover, datos$Abundance,
+     main = "Relación entre canopy cover y riqueza de artrópodos",
+     xlab = "Canopy Cover (%)",
+     ylab = "Riqueza de Artrópodos")
+abline(m1, col = "blue", lwd = 2)
+
+# Graficar diagnóstico del modelo m5
+par(mfrow = c(2, 2))  # Mostrar 4 gráficos en una sola ventana
+plot(m5)
+    </code></pre>
+
+</body>
+</html>
