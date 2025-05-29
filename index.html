@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Análisis de Regresión Lineal Múltiple en R</title>
+    <title>Análisis de Modelos Lineales Generalizados (GLM) en R</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,137 +55,182 @@
 <body>
 
     <img src="https://www.r-project.org/logo/Rlogo.png" alt="Logo de R" width="150">
-    <h1>Script de Regresión Lineal Múltiple en R</h1>
-    <p>Este código realiza un análisis de regresión lineal múltiple sobre datos de abundancia de artrópodos en relación con variables ambientales.</p>
+    <h1>Modelos Lineales Generalizados (GLM) en R</h1>
+    <p>Este documento explora la aplicación de modelos GLM en R para datos ecológicos, con énfasis en modelos con distribución <strong>binomial</strong> y <strong>Poisson</strong>.</p>
+
+    <h2>GLM con familia binomial</h2>
+    <p>El modelo GLM binomial es útil cuando la variable respuesta es dicotómica (presencia/ausencia, éxito/fracaso).</p>
 
     <pre><code>
-# Cargar los datos
-datos <- read.csv("C:/Users/Usuario/Documents/R studios/datos_regresion_lineal_multiple.csv")
-predictoras <- datos[, c("canopy_cover", "av_slope", "trees_over_3m", "av_litter_depth")]
-cor(predictoras, use = "complete.obs", method = "pearson")
-m1 <- lm(Abundance ~ canopy_cover, data = datos)
-m2 <- lm(Abundance ~ canopy_cover + av_slope, data = datos)
-m3 <- lm(Abundance ~ canopy_cover + trees_over_3m, data = datos)
-m4 <- lm(Abundance ~ canopy_cover + av_litter_depth, data = datos)
-m5 <- lm(Abundance ~ canopy_cover + av_slope + trees_over_3m + av_litter_depth, data = datos)
-summary(m5)
-plot(datos$canopy_cover, datos$Abundance,
-     main = "Relación entre canopy cover y riqueza de artrópodos",
-     xlab = "Canopy Cover (%)", ylab = "Riqueza de Artrópodos")
-abline(m1, col = "blue", lwd = 2)
-layout(matrix(c(1,2,3,4), 2, 2)) 
-plot(m5)
-install.packages("jtools")
-library(jtools)
-effect_plot(m5, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Cobertura de dosel (%)",
-            y.label = "Riqueza de artrópodos",
-            main.title = "Efecto de canopy_cover sobre la riqueza de artrópodos")
+# Cargar paquetes requeridos
+library(ggplot2)
+library(dplyr)
+library(MuMIn)
+
+# Ajustar múltiples modelos GLM con diferentes combinaciones de predictores
+model1 <- glm(dead ~ dose + sex + weight, family = binomial, data = data)
+model2 <- glm(dead ~ dose + sex, family = binomial, data = data)
+model3 <- glm(dead ~ dose + weight, family = binomial, data = data)
+model4 <- glm(dead ~ dose, family = binomial, data = data)
+model5 <- glm(dead ~ sex, family = binomial, data = data)
+model6 <- glm(dead ~ weight, family = binomial, data = data)
+
+# Comparar modelos con AIC
+models <- list(model1, model2, model3, model4, model5, model6)
+model_names <- c("dose + sex + weight", "dose + sex", "dose + weight", "dose", "sex", "weight")
+aic_results <- AIC(model1, model2, model3, model4, model5, model6)
+aic_results <- data.frame(Model = model_names, AIC = aic_results$AIC)
+aic_results <- aic_results %>%
+  arrange(AIC) %>%
+  mutate(Delta_AIC = AIC - min(AIC)) %>%
+  mutate(AICW = exp(-0.5 * Delta_AIC) / sum(exp(-0.5 * Delta_AIC)))
+
+print(aic_results)
+
+# Selección del mejor modelo
+best_model <- models[[which.min(aic_results$AIC)]]
+summary(best_model)
+
+# Predicción
+new_data <- expand.grid(
+  dose = seq(min(data$dose), max(data$dose), length.out = 100),
+  sex = c("Male", "Female")
+)
+predictions <- predict(model2, newdata = new_data, type = "link", se.fit = TRUE)
+new_data$predicted <- plogis(predictions$fit)
+new_data$lower_CI <- plogis(predictions$fit - 1.96 * predictions$se.fit)
+new_data$upper_CI <- plogis(predictions$fit + 1.96 * predictions$se.fit)
+
+# Visualización
+ggplot(data, aes(x = dose, y = dead, color = sex)) +
+  geom_point(alpha = 0.5, position = position_jitter(height = 0.1)) +
+  geom_ribbon(data = new_data, aes(y = predicted, ymin = lower_CI, ymax = upper_CI, fill = sex), alpha = 0.2) +
+  geom_line(data = new_data, aes(y = predicted, color = sex), size = 1) +
+  theme_minimal()
     </code></pre>
 
     <div class="explicacion">
-        <strong>Interpretación del análisis:</strong>
-        <p>Decidí hacer una regresión lineal múltiple para evaluar cuáles de estas variables influyen sobre la riqueza de artrópodos. Primero, evalué si las variables predictoras tenían correlaciones entre sí usando Pearson, luego ajusté varios modelos combinando las variables predictoras y los comparé usando AIC.</p>
-        <p>El modelo con el menor AIC fue el <code>m5</code>, que incluye las variables <em>canopy_cover</em>, <em>av_slope</em>, <em>trees_over_3m</em> y <em>av_litter_depth</em>. Este modelo explica aproximadamente el 52% de la varianza observada en la riqueza de artrópodos (<strong>R² ajustado = 0.52</strong>), y muestra que la variable <em>canopy_cover</em> tiene un efecto significativo (<strong>p = 0.0018</strong>).</p>
+        <strong>Interpretación del modelo binomial:</strong>
+        <p>Este modelo estima la probabilidad de ocurrencia de un evento (por ejemplo, muerte por dosis de veneno) en función de variables como dosis, sexo y peso.</p>
+        <p>La función de enlace <code>logit</code> transforma las probabilidades en una escala lineal. El modelo predice la probabilidad ajustada y sus intervalos de confianza.</p>
+    </div>
+    <div class="explicacion">
+    <strong>Interpretación del modelo binomial:</strong>
+    <p>Este análisis utiliza un <strong>modelo lineal generalizado (GLM) con familia binomial</strong>, apropiado para variables respuesta binarias (por ejemplo, muerto o vivo). Se modela la probabilidad de muerte en función de variables como <code>dose</code> (dosis), <code>sex</code> (sexo) y <code>weight</code> (peso).</p>
+    
+    <p>Se ajustan múltiples modelos con distintas combinaciones de predictores. Luego, se comparan usando el <strong>criterio de información de Akaike (AIC)</strong>, que evalúa el ajuste del modelo penalizando por su complejidad. El modelo con el AIC más bajo es considerado el mejor.</p>
+    
+    <p>El mejor modelo seleccionado se utiliza para hacer predicciones sobre nuevas combinaciones de dosis y sexo. Las predicciones se hacen en la escala del enlace logit (log-odds), y luego se transforman a probabilidades mediante la función logística <code>plogis()</code>.</p>
+    
+    <p>Finalmente, se genera una visualización con <strong>intervalos de confianza del 95%</strong> y líneas ajustadas que muestran cómo varía la probabilidad de muerte con la dosis de veneno, diferenciando entre sexos. Esta visualización ayuda a interpretar gráficamente el efecto de los predictores sobre la variable respuesta.</p>
+</div>
+
+
+    <h2>GLM con familia Poisson</h2>
+    <p>Los modelos con distribución Poisson son adecuados para variables de conteo, como número de individuos u ocurrencias de eventos discretos.</p>
+
+    <pre><code>
+# Cargar paquetes
+library(PerformanceAnalytics)
+library(jtools)
+library(MuMIn)
+library(ggeffects)
+library(ggplot2)
+library(patchwork)
+
+data <- read.csv("dato_salida.csv")
+
+# Exploración inicial
+chart.Correlation(data, histogram = TRUE, method = "pearson")
+
+# Modelo global para abundancia_sp1
+options(na.action = "na.fail")
+glm1 <- glm(abundancia_sp1 ~ canopy_cover + vegetation_cover + dap + slope +
+            leaft_litter_depth + humidity + temp, family = poisson, data = data)
+model_set <- dredge(glm1)
+best_model1 <- get.models(model_set, 1)[[1]]
+summary(best_model1)
+
+# Estandarización
+data_std <- data
+vars_to_scale <- c("dap", "humidity", "leaft_litter_depth", "slope")
+data_std[vars_to_scale] <- lapply(data_std[vars_to_scale], function(x) as.numeric(scale(x)))
+
+best_std_model1 <- glm(abundancia_sp1 ~ dap + humidity + leaft_litter_depth + slope,
+                       family = poisson, data = data_std)
+summary(best_std_model1)
+
+# Visualización de efectos parciales
+predictors <- c("dap", "humidity", "leaft_litter_depth", "slope")
+plot_list <- lapply(predictors, function(var) {
+  effect <- ggpredict(best_model1, terms = var)
+  raw_data <- data[, c(var, "abundancia_sp1")]
+  names(raw_data) <- c("x", "y")
+  ggplot() +
+    geom_point(data = raw_data, aes(x = x, y = y), alpha = 0.4) +
+    geom_line(data = effect, aes(x = x, y = predicted), color = "blue") +
+    geom_ribbon(data = effect, aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+    labs(x = var, y = "Predicted abundance", title = paste("Partial Effect of", var)) +
+    theme_minimal()
+})
+wrap_plots(plot_list)
+
+# Modelo para abundancia_sp2 con sobredispersión
+glm2 <- glm(abundancia_sp2 ~ canopy_cover + vegetation_cover + dap + slope +
+            leaft_litter_depth + humidity + temp, family = poisson, data = data)
+model_set2 <- dredge(glm2)
+best_model2 <- get.models(model_set2, 1)[[1]]
+summary(best_model2)
+
+vars_to_scale2 <- c("dap", "humidity", "vegetation_cover")
+data_std[vars_to_scale2] <- lapply(data_std[vars_to_scale2], function(x) as.numeric(scale(x)))
+
+best_std_model2 <- glm(abundancia_sp2 ~ dap + humidity + vegetation_cover,
+                       family = quasipoisson, data = data_std)
+summary(best_std_model2)
+
+# Visualización para variable significativa en sp2
+pred_dap <- ggpredict(best_model2, terms = "vegetation_cover")
+ggplot() +
+  geom_point(data = data, aes(x = vegetation_cover, y = abundancia_sp2), alpha = 0.4) +
+  geom_line(data = pred_dap, aes(x = x, y = predicted), color = "blue", size = 1) +
+  geom_ribbon(data = pred_dap, aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) +
+  labs(x = "Cobertura de vegetación", y = "Abundancia esperada") +
+  theme_minimal()
+    </code></pre>
+
+    <div class="explicacion">
+        <strong>Interpretación del modelo Poisson:</strong>
+        <p>Este modelo evalúa cómo variables ambientales afectan la abundancia de especies. Se usó AIC para selección de variables, estandarización para comparación de efectos, y visualización de efectos parciales.</p>
+        <p>En caso de sobredispersión (varianza &gt; media), se aplica <code>quasipoisson</code> como familia para ajustar el modelo.</p>
     </div>
 
     <div class="nota-final">
-        <strong>Notas:</strong>
+        <strong>Notas generales sobre GLM:</strong>
         <ul>
-            <li><strong>🔁 El mejor modelo puede cambiar</strong>: Dependerá de los datos y del contexto ecológico.</li>
-            <li><strong>📉 El R² ajustado puede variar</strong>: Puede ser más bajo o más alto según las variables usadas.</li>
-            <li><strong>⭐ Las variables significativas cambian</strong>: Pueden cambiar según la muestra y colinealidad.</li>
-            <li><strong>⚠️ Se pueden violar supuestos</strong>: Revisar normalidad, homocedasticidad y outliers.</li>
-            <li><strong>💡 Comportamiento no lineal</strong>: Considerar términos cuadráticos si es necesario.</li>
+            <li><strong>🔢 Validar tipo de variable respuesta</strong>: Elegir la familia adecuada (binomial, Poisson, etc.).</li>
+            <li><strong>📊 Diagnóstico del modelo</strong>: Revisar residuos, leverage y sobredispersión.</li>
+            <li><strong>⚙️ Función de enlace</strong>: Fundamental para la interpretación correcta.</li>
+            <li><strong>🧪 Significancia estadística</strong>: Usar test de Wald, deviance o AIC para comparar modelos.</li>
+            <li><strong>💡 Comportamiento no lineal</strong>: Considerar transformaciones o splines si es necesario.</li>
         </ul>
     </div>
 
     <div class="diagnostico">
-        <h2>El gráfico</h2>
-        <p>Esta es la salida completa de diagnóstico del modelo lineal múltiple <code>m5</code>, y es ideal para analizar los supuestos estadísticos.</p>
-        <h3>Evaluación de supuestos del modelo m5</h3>
+        <h2>Diagnóstico de modelos GLM</h2>
         <ul>
-            <li><strong>Residuals vs Fitted:</strong> Leve curvatura, sin patrón fuerte.</li>
-            <li><strong>Scale-Location:</strong> No hay patrón de embudo, homocedasticidad aceptable.</li>
-            <li><strong>Normal Q-Q:</strong> La mayoría de residuos siguen la línea diagonal, normalidad razonable.</li>
-            <li><strong>Residuals vs Leverage:</strong> Algunos puntos con leverage, pero sin evidencia de observaciones influyentes severas.</li>
+            <li><strong>Residuals vs Fitted:</strong> Detecta no linealidad o mala especificación.</li>
+            <li><strong>Cook’s Distance:</strong> Identifica observaciones influyentes.</li>
+            <li><strong>Deviance residuals:</strong> Usado para evaluar ajuste del modelo.</li>
         </ul>
     </div>
 
     <div class="links">
         <h2>Enlaces útiles:</h2>
-        <a href="https://rpubs.com/joaquin_ar/226291" target="_blank">RPubs: Regresión lineal en R</a>
-        <a href="https://www.datacamp.com/doc/r/regression" target="_blank">DataCamp: Guía de regresión en R</a>
+        <a href="https://bookdown.org/egarpor/GLM/" target="_blank">Libro interactivo de GLM en R</a>
+        <a href="https://r-coder.com/es/glm-r/" target="_blank">Guía GLM en R (r-coder.com)</a>
+        <a href="https://cran.r-project.org/web/packages/jtools/index.html" target="_blank">Paquete jtools</a>
     </div>
-
-    <h2>Análisis final adicional: Modelo biomasa (modelo4)</h2>
-    <pre><code>
-# Cargar los datos
-datos <- read.csv("C:/Users/Usuario/Documents/R studios/table1.csv")
-str(datos)
-predictoras <- datos[, c("canopy_cover", "temperature", "humidity")]
-cor(predictoras, use = "complete.obs", method = "pearson")
-m1 <- lm(biomasa ~ canopy_cover, data = datos)
-m2 <- lm(biomasa ~ canopy_cover + temperature, data = datos)
-m3 <- lm(biomasa ~ canopy_cover + humidity, data = datos)
-m4 <- lm(biomasa ~ canopy_cover + temperature + humidity, data = datos)
-AIC(m1, m2, m3, m4)
-summary(m4)
-plot(datos$canopy_cover, datos$biomasa,
-     main = "Relación entre cobertura de dosel y biomasa",
-     xlab = "Cobertura de dosel (%)", ylab = "Biomasa (g)")
-abline(m1, col = "blue", lwd = 2)
-layout(matrix(c(1,2,3,4), 2, 2))
-plot(m4)
-install.packages("jtools")
-library(jtools)
-effect_plot(m4, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Cobertura de dosel",
-            y.label = "Biomasa",
-            main.title = "Efecto de canopy_cover sobre la biomasa")
-effect_plot(m4, pred = temperature, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Temperatura",
-            y.label = "Biomasa",
-            main.title = "Efecto de temperature sobre la biomasa")
-effect_plot(m4, pred = humidity, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Humedad",
-            y.label = "Biomasa",
-            main.title = "Efecto de humidity sobre la biomasa")
-    </code></pre>
-
-    <h2>Repetición final del modelo biomasa (modelo4)</h2>
-    <pre><code>
-# Cargar los datos
-datos <- read.csv("C:/Users/Usuario/Documents/R studios/table1.csv")
-str(datos)
-cor(datos[, c("canopy_cover", "temperature", "humidity")], use = "complete.obs", method = "pearson")
-modelo1 <- lm(biomasa ~ canopy_cover, data = datos)
-modelo2 <- lm(biomasa ~ canopy_cover + temperature, data = datos)
-modelo3 <- lm(biomasa ~ canopy_cover + humidity, data = datos)
-modelo4 <- lm(biomasa ~ canopy_cover + temperature + humidity, data = datos)
-AIC(modelo1, modelo2, modelo3, modelo4)
-summary(modelo4)
-plot(datos$canopy_cover, datos$biomasa,
-     main = "Relación entre canopy_cover y biomasa",
-     xlab = "Cobertura de dosel (%)", ylab = "Biomasa (g)")
-abline(modelo1, col = "blue", lwd = 2)
-layout(matrix(c(1,2,3,4), 2, 2))
-plot(modelo4)
-install.packages("jtools")
-library(jtools)
-effect_plot(modelo4, pred = canopy_cover, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Canopy Cover (%)",
-            y.label = "Biomasa",
-            main.title = "Efecto de canopy_cover sobre la biomasa")
-effect_plot(modelo4, pred = temperature, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Temperatura",
-            y.label = "Biomasa",
-            main.title = "Efecto de temperature sobre la biomasa")
-effect_plot(modelo4, pred = humidity, interval = TRUE, plot.points = TRUE,
-            jitter = 0.05, x.label = "Humedad",
-            y.label = "Biomasa",
-            main.title = "Efecto de humidity sobre la biomasa")
-    </code></pre>
 
 </body>
 </html>
